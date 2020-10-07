@@ -169,6 +169,11 @@ namespace SimpleUwpCalculator
                 viewModel.Memory = decimal.Parse(viewModel.DisplayText);
         }
 
+        private void ButtonMore_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
         private static bool IsNumber(string str)
         {
             try
