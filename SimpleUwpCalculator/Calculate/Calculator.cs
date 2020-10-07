@@ -40,7 +40,11 @@ namespace SimpleUwpCalculator.Calculate
                 }
             }
 
-            public void Clear() => sb.Clear();
+            public void Clear()
+            {
+                sb.Clear();
+                hasDot = false;
+            }
 
             private readonly StringBuilder sb = new StringBuilder();
 
