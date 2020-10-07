@@ -17,6 +17,7 @@ using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using SimpleUwpCalculator.Calculate;
 using Windows.UI.Popups;
+using System.Collections.ObjectModel;
 
 // https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x804 上介绍了“空白页”项模板
 
@@ -171,7 +172,7 @@ namespace SimpleUwpCalculator
 
         private void ButtonMore_Click(object sender, RoutedEventArgs e)
         {
-
+            Splview.IsPaneOpen = !Splview.IsPaneOpen;
         }
 
         private static bool IsNumber(string str)
@@ -185,6 +186,28 @@ namespace SimpleUwpCalculator
                 return false;
             }
             return true;
+        }
+
+        private void Splview_PaneOpening(SplitView sender, object args)
+        {
+            if (Splview.DisplayMode == SplitViewDisplayMode.Overlay)
+                mask.Visibility = Visibility.Visible;
+        }
+
+        private void Splview_PaneClosing(SplitView sender, SplitViewPaneClosingEventArgs args)
+        {
+            mask.Visibility = Visibility.Collapsed;
+        }
+
+        private void HistoryItemClick(object sender, ItemClickEventArgs e)
+        {
+            viewModel.Clear();
+            viewModel.AppendNumber(((HistoryItem)e.ClickedItem).Result);
+        }
+
+        private void DeleteHistoryButton_Click(object sender, RoutedEventArgs e)
+        {
+            viewModel.Histories.Clear();
         }
     }
 
@@ -200,10 +223,10 @@ namespace SimpleUwpCalculator
         }
 
         private DisplayStatus status = DisplayStatus.Ok;
-        public DisplayStatus Status
+        private DisplayStatus Status
         {
             get => status;
-            private set
+            set
             {
                 status = value;
                 NotifyTextColorChanged();
@@ -237,6 +260,9 @@ namespace SimpleUwpCalculator
             }
         }
 
+        /// <summary>
+        /// clear text on display panel, then set status to Ok
+        /// </summary>
         public void Clear()
         {
             sb.Clear();
@@ -244,6 +270,9 @@ namespace SimpleUwpCalculator
             NotifyDisplayTextChanged();
         }
 
+        /// <summary>
+        /// calculate and show result
+        /// </summary>
         public async void ShowResult()
         {
             if (Status == DisplayStatus.Error)
@@ -253,10 +282,12 @@ namespace SimpleUwpCalculator
             }
             try
             {
-                decimal result = Calculator.CalculateFromString(sb.ToString());
+                string expression = sb.ToString();
+                decimal result = Calculator.CalculateFromString(expression);
                 sb.Clear();
                 sb.Append(result);
                 NotifyDisplayTextChanged();
+                Histories.Add(new HistoryItem(expression, result));
             }
             catch (InvalidExpresionException)
             {
@@ -271,7 +302,32 @@ namespace SimpleUwpCalculator
             }
         }
 
-        public decimal? Memory { get; set; }
+        private readonly StringBuilder sb = new StringBuilder();
+
+        private decimal? memory;
+        /// <summary>
+        /// the number stored in memory
+        /// </summary>
+        public decimal? Memory
+        {
+            get => memory;
+            set
+            {
+                memory = value;
+                NotifyMemoryPropertiesChanged();
+            }
+        }
+
+        public Visibility MemoryVisibility
+        {
+            get => Memory.HasValue ? Visibility.Visible
+                                   : Visibility.Collapsed;
+        }
+
+        public decimal MemoryText { get => Memory ?? 0; }
+
+        public ObservableCollection<HistoryItem> Histories { get; }
+            = new ObservableCollection<HistoryItem>();
 
         public void NotifyPropertyChanged(string propertyName)
         {
@@ -282,14 +338,29 @@ namespace SimpleUwpCalculator
 
         private void NotifyTextColorChanged() => NotifyPropertyChanged("TextColor");
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        private void NotifyMemoryPropertiesChanged()
+        {
+            NotifyPropertyChanged("MemoryVisibility");
+            NotifyPropertyChanged("MemoryText");
+        }
 
-        private readonly StringBuilder sb = new StringBuilder();
+        public event PropertyChangedEventHandler PropertyChanged;
     }
 
     enum DisplayStatus
     {
         Ok,
         Error
+    }
+
+    public class HistoryItem
+    {
+        public HistoryItem(string expression, decimal result)
+        {
+            Expression = expression;
+            Result = result;
+        }
+        public string Expression { get; set; }
+        public decimal Result { get; set; }
     }
 }
