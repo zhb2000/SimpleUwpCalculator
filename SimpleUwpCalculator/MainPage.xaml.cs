@@ -1,23 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Text;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.UI;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
-using SimpleUwpCalculator.Calculate;
-using Windows.UI.Popups;
-using System.Collections.ObjectModel;
 
 // https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x804 上介绍了“空白页”项模板
 
@@ -28,7 +12,7 @@ namespace SimpleUwpCalculator
     /// </summary>
     public sealed partial class MainPage : Page
     {
-        private MainPageViewModel viewModel = new MainPageViewModel();
+        private readonly MainPageViewModel viewModel = new MainPageViewModel();
 
         public MainPage()
         {
@@ -175,19 +159,6 @@ namespace SimpleUwpCalculator
             Splview.IsPaneOpen = !Splview.IsPaneOpen;
         }
 
-        private static bool IsNumber(string str)
-        {
-            try
-            {
-                decimal.Parse(str);
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-            return true;
-        }
-
         private void Splview_PaneOpening(SplitView sender, object args)
         {
             if (Splview.DisplayMode == SplitViewDisplayMode.Overlay)
@@ -209,158 +180,21 @@ namespace SimpleUwpCalculator
         {
             viewModel.Histories.Clear();
         }
-    }
-
-    class MainPageViewModel : INotifyPropertyChanged
-    {
-        public string DisplayText { get => sb.ToString(); }
-
-        public Brush TextColor
-        {
-            get => (Status == DisplayStatus.Ok)
-                        ? new SolidColorBrush(Colors.Black)
-                        : new SolidColorBrush(Colors.Red);
-        }
-
-        private DisplayStatus status = DisplayStatus.Ok;
-        private DisplayStatus Status
-        {
-            get => status;
-            set
-            {
-                status = value;
-                NotifyTextColorChanged();
-            }
-        }
-
-        public void AppendNumber(decimal number)
-        {
-            if (Status == DisplayStatus.Error)
-                Clear();
-            sb.Append(number);
-            NotifyDisplayTextChanged();
-        }
-
-        public void AppendOperator(char ch)
-        {
-            if (Status == DisplayStatus.Error)
-                Clear();
-            sb.Append(ch);
-            NotifyDisplayTextChanged();
-        }
-
-        public void Delete()
-        {
-            if (Status == DisplayStatus.Error)
-                Clear();
-            if (sb.Length != 0)
-            {
-                sb.Remove(sb.Length - 1, 1);
-                NotifyDisplayTextChanged();
-            }
-        }
 
         /// <summary>
-        /// clear text on display panel, then set status to Ok
+        /// the string is a valid dicimal or not
         /// </summary>
-        public void Clear()
+        private static bool IsNumber(string str)
         {
-            sb.Clear();
-            Status = DisplayStatus.Ok;
-            NotifyDisplayTextChanged();
-        }
-
-        /// <summary>
-        /// calculate and show result
-        /// </summary>
-        public async void ShowResult()
-        {
-            if (Status == DisplayStatus.Error)
-            {
-                Clear();
-                return;
-            }
             try
             {
-                string expression = sb.ToString();
-                decimal result = Calculator.CalculateFromString(expression);
-                sb.Clear();
-                sb.Append(result);
-                NotifyDisplayTextChanged();
-                Histories.Add(new HistoryItem(expression, result));
+                decimal.Parse(str);
             }
-            catch (InvalidExpresionException)
+            catch (Exception)
             {
-                sb.Clear();
-                sb.Append("Invalid Expression");
-                NotifyDisplayTextChanged();
-                Status = DisplayStatus.Error;
+                return false;
             }
-            catch (Exception ex)
-            {
-                await new MessageDialog(ex.Message).ShowAsync();
-            }
+            return true;
         }
-
-        private readonly StringBuilder sb = new StringBuilder();
-
-        private decimal? memory;
-        /// <summary>
-        /// the number stored in memory
-        /// </summary>
-        public decimal? Memory
-        {
-            get => memory;
-            set
-            {
-                memory = value;
-                NotifyMemoryPropertiesChanged();
-            }
-        }
-
-        public Visibility MemoryVisibility
-        {
-            get => Memory.HasValue ? Visibility.Visible
-                                   : Visibility.Collapsed;
-        }
-
-        public decimal MemoryText { get => Memory ?? 0; }
-
-        public ObservableCollection<HistoryItem> Histories { get; }
-            = new ObservableCollection<HistoryItem>();
-
-        public void NotifyPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        private void NotifyDisplayTextChanged() => NotifyPropertyChanged("DisplayText");
-
-        private void NotifyTextColorChanged() => NotifyPropertyChanged("TextColor");
-
-        private void NotifyMemoryPropertiesChanged()
-        {
-            NotifyPropertyChanged("MemoryVisibility");
-            NotifyPropertyChanged("MemoryText");
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-    }
-
-    enum DisplayStatus
-    {
-        Ok,
-        Error
-    }
-
-    public class HistoryItem
-    {
-        public HistoryItem(string expression, decimal result)
-        {
-            Expression = expression;
-            Result = result;
-        }
-        public string Expression { get; set; }
-        public decimal Result { get; set; }
     }
 }

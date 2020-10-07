@@ -1,16 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
 using System.Text;
-using System.Threading.Tasks;
-using Windows.Web.Http.Headers;
 
 namespace SimpleUwpCalculator.Calculate
 {
+    /// <summary>
+    /// Some functions for calculating an expression
+    /// </summary>
     static class Calculator
     {
+        /// <summary>
+        /// Calculate an expression string
+        /// </summary>
+        /// <param name="str">an expression string</param>
+        /// <returns>result of the expression</returns>
+        /// <exception cref="SimpleUwpCalculator.Calculate.InvalidExpresionException"></exception>
+        /// <exception cref="System.DivideByZeroException"></exception>
+        /// <exception cref="System.OverflowException"></exception>
         public static decimal CalculateFromString(string str)
         {
             var tokens = Tokenize(str);
